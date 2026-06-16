@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anzi Count</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Firebase SDK Modular -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, increment, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCOLg_VPyiK6580vNzPMVfIDt3CxYjAvs",
+            authDomain: "anzicount.firebaseapp.com",
+            databaseURL: "https://anzicount-default-rtdb.firebaseio.com",
+            projectId: "anzicount",
+            storageBucket: "anzicount.firebasestorage.app",
+            messagingSenderId: "404307161241",
+            appId: "1:404307161241:web:ab0424b10fa9a4bd1cc808"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const visitorRef = ref(db, 'visitorCount');
+
+        // 1. Cek Refresh dengan sessionStorage
+        if (!sessionStorage.getItem('voted_page_anzicount')) {
+            update(visitorRef, { count: increment(1) })
+                .then(() => sessionStorage.setItem('voted_page_anzicount', 'true'))
+                .catch(e => console.error("Update Gagal:", e));
+        }
+
+        // 2. Real-time listener
+        onValue(visitorRef, (snapshot) => {
+            const data = snapshot.val();
+            const count = data ? data.count : 0;
+            gsap.to("#visitor-count", {innerText: count, duration: 1.5, snap: {innerText: 1}, ease: "power2.out"});
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .keypad-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 24px; transition: 0.2s; cursor: pointer; }
+        .keypad-btn:active { background: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen flex items-center justify-center">
+
+    <div class="text-center p-8">
+        <h1 class="text-xs uppercase tracking-[0.3em] text-slate-500 mb-2">Anzi Count</h1>
+        <h2 class="text-2xl font-light mb-8">Selamat beraktifitas</h2>
+        <p class="text-sm text-slate-400 mb-2">Anda adalah pengunjung ke :</p>
+        <div id="visitor-count" class="text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600">0</div>
+        <div class="flex items-center justify-center gap-2 text-slate-400">
+            <span id="visitor-id" class="font-mono text-sm">AS-XXXXXX</span>
+            <button onclick="copyID()" class="text-[10px] bg-white/5 px-2 py-1 rounded hover:bg-white/10 transition">SALIN</button>
+        </div>
+    </div>
+
+    <button onclick="openAdmin()" class="fixed bottom-4 right-4 w-12 h-12 opacity-0 cursor-pointer z-50">Admin</button>
+
+    <!-- Modal Admin -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex flex-col items-center justify-center backdrop-blur-3xl">
+        <div id="keypad" class="grid grid-cols-3 gap-6"></div>
+        <div id="admin-controls" class="hidden flex flex-col gap-4 mt-8 w-64">
+            <button onclick="resetSession()" class="w-full py-3 bg-red-600 rounded-xl font-bold hover:bg-red-500 transition">NEW SESSION</button>
+            <button onclick="closeAdmin()" class="w-full py-3 bg-white/10 rounded-xl hover:bg-white/20 transition">KEMBALI</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        // Fungsi Admin
+        window.resetSession = () => {
+            const db = getDatabase();
+            update(ref(db, 'visitorCount'), { count: 0 })
+                .then(() => {
+                    alert("Sesi Baru Dimulai! Pengunjung di-reset.");
+                    location.reload();
+                });
+        };
+    </script>
+
+    <script>
+        function copyID() {
+            const text = document.getElementById('visitor-id').innerText;
+            navigator.clipboard.writeText(text).then(() => alert("ID Disalin!"));
+        }
+        window.onload = () => {
+            const now = new Date();
+            document.getElementById('visitor-id').innerText = `AS-${String(now.getSeconds()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getHours()).padStart(2,'0')}`;
+        };
+        // Tambahkan logika Keypad Admin di sini sesuai dengan yang sudah ada...
+    </script>
+</body>
+</html>
